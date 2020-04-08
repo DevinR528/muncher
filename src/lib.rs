@@ -10,9 +10,9 @@
 //! let input = "hello world";
 //! let m = Muncher::new(input);
 //! 
-//! assert_eq!(m.seek(5), Some("hello"));
+//! assert_eq!(m.seek(5), Some("hello".to_string()));
 //! assert_eq!(m.peek(), Some(&' '));
-//! assert_eq!(m.seek(5), Some("world"));
+//! assert_eq!(m.seek(5), Some("world".to_string()));
 //! assert!(m.peek().is_none());
 //! ```
 //! ```
@@ -59,4 +59,4 @@
 //!
 mod muncher;
 
-pub use muncher::{Fork, Muncher, Stack, StackResult};
+pub use crate::muncher::{Fork, Muncher, Stack, StackResult};

@@ -11,4 +11,4 @@ edition = "2018"
 readme = "README.md"
 
 [badges]
-travis-ci = { repository = "DevinR528/cargo-sort-ck" }
+travis-ci = { repository = "DevinR528/muncher" }

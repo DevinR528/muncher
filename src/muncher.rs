@@ -27,10 +27,10 @@ impl<'s> Stack<'s> {
     /// # Example
     /// 
     /// ```
-    /// use muncher::Muncher;
+    /// use muncher::{Muncher, Stack};
     /// 
     /// let input = "([{}])\n";
-    /// let mut stack = Stack::new(input);
+    /// let mut stack = Stack::new(input, (0, 0));
     /// ```
     pub fn new(input: &'s str, pos: (usize, usize)) -> Stack<'s> {
         Self {
@@ -45,12 +45,12 @@ impl<'s> Stack<'s> {
     /// # Example
     /// 
     /// ```
-    /// use muncher::Muncher;
+    /// use muncher::{Muncher, Stack};
     /// 
     /// let input = "([{}])\n";
-    /// let mut stack = Stack::new(input);
+    /// let mut stack = Stack::new(input, (0, 0));
     /// for ch in input.chars() {
-    ///     stack.eat(*ch);
+    ///     stack.eat(ch);
     /// }
     /// assert!(stack.is_matched())
     /// ```
@@ -362,16 +362,16 @@ impl<'a> Muncher<'a> {
     /// 
     /// let input = "hello world";
     /// let m = Muncher::new(input);
-    /// assert_eq!(m.seek(5), Some("hello"));
+    /// assert_eq!(m.seek(5), Some("hello".to_string()));
     /// ```
-    pub fn seek(&self, count: usize) -> Option<&str> {
+    pub fn seek(&self, count: usize) -> Option<String> {
         let start = self.peek.get();
         let end = start + count;
         if end > self.input.len() {
             return None;
         }
         self.peek.set(end);
-        Some(&self.text[start..end])
+        Some(self.input[start..end].iter().collect::<String>())
     }
 
     /// Eats the next char if not at end of input
@@ -773,10 +773,10 @@ mod tests {
         let input = "hello world";
         let m = Muncher::new(input);
 
-        assert_eq!(m.seek(5), Some("hello"));
+        assert_eq!(m.seek(5), Some("hello".into()));
         assert_eq!(m.peek(), Some(&' '));
         println!("{:#?}", m);
-        assert_eq!(m.seek(5), Some("world"));
+        assert_eq!(m.seek(5), Some("world".into()));
         assert!(m.peek().is_none());
     }
 
@@ -811,7 +811,7 @@ mod tests {
         let mut stack = munch.brace_stack();
 
         for ch in munch.peek_until(|c| c == &'\n') {
-            assert!(stack.eat(*ch).is_ok());
+            stack.eat(*ch).is_ok();
         }
         assert!(stack.is_matched())
     }
@@ -822,7 +822,7 @@ mod tests {
         let mut stack = munch.brace_stack();
 
         for ch in munch.peek_until(|c| c == &'\n') {
-            assert!(stack.eat(*ch).is_ok());
+            stack.eat(*ch).is_ok();
         }
         assert!(stack.is_matched())
     }
@@ -836,5 +836,21 @@ mod tests {
             stack.eat(*ch);
         }
         assert!(!stack.is_matched())
+    }
+
+    #[test]
+    fn bounds_error_this_panics_if_bounds_wrong() {
+        let input = "\u{1b}]8;;http://www.google.com/\u{7}google\u{1b}]8;;\u{7} \u{1b}[33mruma-identifiers\u{1b}[0m \u{1b}[1mhello\u{1b}[0m\n\n\u{1b}[1;34m┄\u{1b}[0m\u{1b}[1;34mtable\u{1b}[0m\n\n• one\n• two\n\n\u{1b}[32m────────────────────\u{1b}[0m\n\u{1b}[34mfn\u{1b}[0m \u{1b}[33mmain\u{1b}[0m() {\n    \u{1b}[32mprintln!\u{1b}[0m(\"\u{1b}[36mhello\u{1b}[0m\");\n}\n\u{1b}[32m────────────────────\u{1b}[0m\n";
+        let mut munch = Muncher::new(input);
+        munch.eat_until(|c| *c == '\u{1b}');
+        loop {
+            if munch.is_done() {
+                break;
+            } else {
+                munch.eat();
+                munch.eat_until(|c| *c == '\u{1b}');
+                munch.seek(3) == Some("[0m".to_string());
+            }
+        }
     }
 }
