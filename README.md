@@ -11,7 +11,7 @@ has a built in brace matching stack accessed from `Muncher::brace_stack()`.
 ## Use
 ```toml
 [dependencies]
-muncher = "0.5"
+muncher = "0.6"
 ```
 
 ## Examples
