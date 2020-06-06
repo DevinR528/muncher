@@ -290,7 +290,7 @@ impl<'a> Muncher<'a> {
         P: FnMut(&char) -> bool,
     {
         let start = self.peek.get();
-        for ch in self.input[start..].iter() {
+        for ch in self.input.iter().skip(start) {
             if pred(ch) {
                 break;
             } else {
@@ -299,7 +299,7 @@ impl<'a> Muncher<'a> {
         }
         let end = self.peek.get();
         self.peek.set(end);
-        self.input[start..end].iter()
+        self.input.iter().skip(start).take(end - start)
     }
 
     /// Peek tokens until given predicate is true returns start and end.
@@ -321,7 +321,7 @@ impl<'a> Muncher<'a> {
         P: FnMut(&char) -> bool,
     {
         let start = self.reset_peek();
-        for ch in self.input[start..].iter() {
+        for ch in self.input.iter().skip(start) {
             if pred(ch) {
                 break;
             } else {
@@ -605,19 +605,20 @@ impl<'a> Muncher<'a> {
         P: FnMut(&char) -> bool,
     {
         let start = self.next;
-        for ch in self.input[start..].iter() {
+        for ch in self.input.iter().skip(start) {
             if pred(ch) {
                 break;
             } else {
                 self.next += 1;
             }
         }
-        let end = self.next;
-        self.peek.set(end);
-        self.next = end;
+        let diff = self.next - start;
+        self.peek.set(self.next);
 
-        self.input[start..end]
+        self.input
             .iter()
+            .skip(start)
+            .take(diff)
             .copied()
             .collect::<Vec<_>>()
             .into_iter()
@@ -641,18 +642,16 @@ impl<'a> Muncher<'a> {
         P: FnMut(&char) -> bool,
     {
         let start = self.next;
-        for ch in self.input[start..].iter() {
+        for ch in self.input.iter().skip(start)  {
             if pred(ch) {
                 break;
             } else {
                 self.next += 1;
             }
         }
-        let end = self.next;
-        self.peek.set(end);
-        self.next = end;
+        self.peek.set(self.next);
 
-        (start, end)
+        (start, self.next)
     }
 
     /// Eat tokens until needle is found returns start and end.
@@ -670,6 +669,8 @@ impl<'a> Muncher<'a> {
     /// assert_eq!(munch.eat(), Some('d'));
     /// ```
     pub fn eat_range_of(&mut self, needle: &str) -> (usize, usize) {
+        assert!(self.next < self.input.len());
+        
         self.reset_peek();
         let start = self.next;
         let split = self.text[start..].split(needle).collect::<Vec<_>>();
@@ -689,13 +690,13 @@ mod tests {
         let input = "abc\ndef\nghi";
         let mut munch = Muncher::new(input);
         
-        let s = munch.eat_until(|ch| ch == &'c').collect::<String>();
+        let _ = munch.eat_until(|ch| ch == &'c').collect::<String>();
         munch.eat();
 
         let (c, l) = munch.cursor_position();
         assert_eq!(c, 4);
         assert_eq!(l, 1);
-        let s = munch.eat_until(|ch| ch == &'g').collect::<String>();
+        let _ = munch.eat_until(|ch| ch == &'g').collect::<String>();
 
         let (c, l) = munch.cursor_position();
         assert_eq!(c, 1);
@@ -710,6 +711,7 @@ mod tests {
         assert_eq!(m.eat(), Some('h'));
 
         for ch in m.eat_until(|c| c.is_whitespace()) {
+            println!("{}", ch);
             assert!(!ch.is_whitespace());
         }
         assert_eq!(m.peek(), Some(&' '));
@@ -753,7 +755,7 @@ mod tests {
     #[test]
     fn peek_count() {
         let input = "abcde";
-        let mut munch = Muncher::new(input);
+        let munch = Muncher::new(input);
         
         let (start, end) = munch.peek_until_count(|ch| ch == &'d');
         assert_eq!(&munch.text()[start..end], "abc");
@@ -762,7 +764,7 @@ mod tests {
     #[test]
     fn peek_range_of() {
         let input = "abcde";
-        let mut munch = Muncher::new(input);
+        let munch = Muncher::new(input);
         
         let (start, end) = munch.peek_range_of("d");
         assert_eq!(&munch.text()[start..end], "abc");
@@ -807,7 +809,7 @@ mod tests {
     #[test]
     fn test_stack_math() {
         let input = "((5 + (3 * 10)) / 1)\n";
-        let mut munch = Muncher::new(input);
+        let munch = Muncher::new(input);
         let mut stack = munch.brace_stack();
 
         for ch in munch.peek_until(|c| c == &'\n') {
@@ -818,7 +820,7 @@ mod tests {
     #[test]
     fn test_stack_code() {
         let input = "fn a() { fn b() { x = [ (), () ] } }\n";
-        let mut munch = Muncher::new(input);
+        let munch = Muncher::new(input);
         let mut stack = munch.brace_stack();
 
         for ch in munch.peek_until(|c| c == &'\n') {
@@ -829,7 +831,7 @@ mod tests {
     #[test]
     fn test_stack_fail() {
         let input = "(]\n";
-        let mut munch = Muncher::new(input);
+        let munch = Muncher::new(input);
         let mut stack = munch.brace_stack();
 
         for ch in munch.peek_until(|c| c == &'\n') {
@@ -842,14 +844,14 @@ mod tests {
     fn bounds_error_this_panics_if_bounds_wrong() {
         let input = "\u{1b}]8;;http://www.google.com/\u{7}google\u{1b}]8;;\u{7} \u{1b}[33mruma-identifiers\u{1b}[0m \u{1b}[1mhello\u{1b}[0m\n\n\u{1b}[1;34m┄\u{1b}[0m\u{1b}[1;34mtable\u{1b}[0m\n\n• one\n• two\n\n\u{1b}[32m────────────────────\u{1b}[0m\n\u{1b}[34mfn\u{1b}[0m \u{1b}[33mmain\u{1b}[0m() {\n    \u{1b}[32mprintln!\u{1b}[0m(\"\u{1b}[36mhello\u{1b}[0m\");\n}\n\u{1b}[32m────────────────────\u{1b}[0m\n";
         let mut munch = Muncher::new(input);
-        munch.eat_until(|c| *c == '\u{1b}');
+        let _ = munch.eat_until(|c| *c == '\u{1b}');
         loop {
             if munch.is_done() {
                 break;
             } else {
                 munch.eat();
-                munch.eat_until(|c| *c == '\u{1b}');
-                munch.seek(3) == Some("[0m".to_string());
+                let _ = munch.eat_until(|c| *c == '\u{1b}');
+                let _ = munch.seek(3) == Some("[0m".to_string());
             }
         }
     }
