@@ -206,8 +206,8 @@ impl<'a> Muncher<'a> {
     }
 
     /// Returns the whole input text as `&str`.
-    /// 
-    pub fn text(&self) -> &str {
+    ///
+    pub fn text(&self) -> &'a str {
         self.text
     }
     /// The position of `Muncher`, not its peek position.
