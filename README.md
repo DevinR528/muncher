@@ -1,6 +1,6 @@
 # Muncher
 
-[![Build Status](https://travis-ci.com/DevinR528/muncher.svg?branch=master)](https://travis-ci.com/DevinR528/muncher)
+[![Rust Stable](https://github.com/DevinR528/muncher/actions/workflows/stable.yml/badge.svg)](https://github.com/DevinR528/muncher/actions/workflows/stable.yml)
 [![Latest Version](https://img.shields.io/crates/v/muncher.svg)](https://crates.io/crates/muncher)
 
 ## About
