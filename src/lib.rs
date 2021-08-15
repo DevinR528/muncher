@@ -6,10 +6,10 @@
 //! # Creation and Peeking
 //! ```
 //! use muncher::Muncher;
-//! 
+//!
 //! let input = "hello world";
 //! let m = Muncher::new(input);
-//! 
+//!
 //! assert_eq!(m.seek(5), Some("hello".to_string()));
 //! assert_eq!(m.peek(), Some(&' '));
 //! assert_eq!(m.seek(5), Some("world".to_string()));
@@ -20,16 +20,17 @@
 //! let input = "abcde";
 //! let mut munch = Muncher::new(input);
 //! assert_eq!(munch.eat(), Some('a'));
-//! 
+//!
 //! let fork = munch.fork();
 //! assert_eq!(fork.peek(), Some(&'b'));
 //! assert_eq!(munch.eat(), Some('b'));
 //! ```
 //!
-//! `Muncher` has many `eat_*` methods as well as [`eat`](Muncher::eat) that are used to advance
-//! the cursor. `eat` returns an `Option<char>` if you want to use the returned char.
-//! Another way of advancing the cursor is the [`eat_until`](Muncher::eat_until),
-//! [`eat_until_count`](Muncher::eat_until_count) and [`eat_range_of`](Muncher::eat_range_of) methods.
+//! `Muncher` has many `eat_*` methods as well as [`eat`](Muncher::eat) that are used to
+//! advance the cursor. `eat` returns an `Option<char>` if you want to use the returned
+//! char. Another way of advancing the cursor is the [`eat_until`](Muncher::eat_until),
+//! [`eat_until_count`](Muncher::eat_until_count) and
+//! [`eat_range_of`](Muncher::eat_range_of) methods.
 //!
 //! ## eat_until
 //! ```
@@ -56,7 +57,6 @@
 //! assert_eq!(&munch.text()[start..end], "abc");
 //! assert_eq!(munch.eat(), Some('d'));
 //! ```
-//!
 mod muncher;
 
 pub use crate::muncher::{Fork, Muncher, Stack, StackResult};
