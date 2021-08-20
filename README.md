@@ -4,9 +4,9 @@
 [![Latest Version](https://img.shields.io/crates/v/muncher.svg)](https://crates.io/crates/muncher)
 
 ## About
-An easy to use string muncher that allows easy tokenization when writing a parser. Muncher has peek
-and fork capabilities so you can look ahead and behind when needed. If lexing braces Muncher
-has a built in brace matching stack accessed from `Muncher::brace_stack()`.
+An easy-to-use string muncher that allows easy tokenization when writing a parser. Muncher has peek
+and fork capabilities, so you can look ahead and behind when needed. If lexing braces, Muncher
+has a built-in brace matching stack accessed from `Muncher::brace_stack()`.
 
 ## Use
 ```toml
