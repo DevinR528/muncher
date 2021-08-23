@@ -101,7 +101,7 @@ impl<'s> Stack<'s> {
 
 #[derive(Debug, Clone)]
 pub struct Fork<'a> {
-    input: &'a [char],
+    input: &'a [(usize, char)],
     peek: Cell<usize>,
 }
 
@@ -116,7 +116,10 @@ impl<'f> Fork<'f> {
     }
 
     /// Peeks the next `char` and increments the peek count.
-    pub fn peek(&self) -> Option<&char> { self.input.get(self.adv_peek()) }
+    pub fn peek(&self) -> Option<&char> {
+        self.input.get(self.adv_peek()).map(|(_, c)| c)
+    }
+
     /// Seek forward count number of `char`s and returns them as string.
     pub fn seek(&self, count: usize) -> Option<String> {
         let start = self.peek.get();
@@ -124,15 +127,19 @@ impl<'f> Fork<'f> {
         if end >= self.input.len() {
             return None;
         }
-        Some(self.input[start..end].iter().collect())
+        Some(self.input[start..end].iter().map(|(_, c)| c).collect())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Muncher<'a> {
+    /// Original input
     text: &'a str,
-    input: Vec<char>,
+    /// The chars_indices of the input text
+    input: Vec<(usize, char)>,
+    /// The next char index to peek
     peek: Cell<usize>,
+    /// The next char index to eat
     next: usize,
 }
 
@@ -147,7 +154,12 @@ impl<'a> Muncher<'a> {
     /// let munch = Muncher::new(input);
     /// ```
     pub fn new(input: &'a str) -> Self {
-        Self { text: input, input: input.chars().collect(), peek: Cell::new(0), next: 0 }
+        Self {
+            text: input,
+            input: input.char_indices().collect(),
+            peek: Cell::new(0),
+            next: 0,
+        }
     }
 
     /// A peekable fork that does not alter the position of
@@ -189,8 +201,24 @@ impl<'a> Muncher<'a> {
     /// Returns the whole input text as `&str`.
     pub fn text(&self) -> &'a str { self.text }
 
-    /// The position of `Muncher`, not its peek position.
-    pub fn position(&self) -> usize { self.next }
+    /// Returns byte index for given char index, if valid. Otherwise returns input len.
+    pub fn position_of_char(&self, char_index: usize) -> usize {
+        if let Some((byte_index, _)) = self.input.get(char_index) {
+            return *byte_index;
+        }
+
+        self.text.len()
+    }
+
+    /// The current byte index of `Muncher`, not its peek position.
+    pub fn position(&self) -> usize {
+        self.position_of_char(self.next)
+    }
+
+    /// The current char index of `Muncher`, not its peek position.
+    pub fn char_position(&self) -> usize {
+        self.next
+    }
 
     /// Returns true when next counter has exhausted input.
     pub fn is_done(&self) -> bool { self.next >= self.input.len() }
@@ -210,7 +238,7 @@ impl<'a> Muncher<'a> {
         let mut ln = 1;
         let mut col = 1;
 
-        for (i, ch) in self.input.iter().enumerate() {
+        for (i, (_, ch)) in self.input.iter().enumerate() {
             if self.next == i {
                 break;
             }
@@ -243,7 +271,7 @@ impl<'a> Muncher<'a> {
     pub fn peek(&self) -> Option<&char> {
         let res = self.input.get(self.peek.get());
         self.adv_peek();
-        res
+        res.map(|(_, c)| c)
     }
 
     /// Peek tokens until given predicate is true.
@@ -264,47 +292,49 @@ impl<'a> Muncher<'a> {
     where
         P: FnMut(&char) -> bool,
     {
-        let start = self.reset_peek();
-        for ch in self.input.iter().skip(start) {
+        let char_start = self.reset_peek();
+        for (_, ch) in self.input.iter().skip(char_start) {
             if pred(ch) {
                 break;
             } else {
                 self.peek.set(self.peek.get() + 1);
             }
         }
-        let end = self.peek.get();
-        self.peek.set(end);
-        self.input.iter().skip(start).take(end - start)
+        let char_end = self.peek.get();
+        self.peek.set(char_end);
+        self.input.iter().skip(char_start).take(char_end - char_start).map(|(_, c)| c)
     }
 
-    /// Peek tokens until given predicate is true returns start and end.
-    /// Resets the peek position every time called.
+    /// Peek tokens until given predicate is true returns start and end (as byte
+    /// positions). Resets the peek position every time called.
     ///
     /// # Example
     /// ```
     /// use muncher::Muncher;
     ///
-    /// let input = "abcde";
+    /// let input = "pánico en la discoteca";
     /// let mut munch = Muncher::new(input);
     ///
     /// let (start, end) = munch.peek_until_count(|ch| ch == &'d');
-    /// assert_eq!(&munch.text()[start..end], "abc");
-    /// assert_eq!(munch.eat(), Some('a'));
+    /// assert_eq!(&munch.text()[start..end], "pánico en la ");
+    /// assert_eq!(munch.eat(), Some('p'));
     /// ```
     pub fn peek_until_count<P>(&self, mut pred: P) -> (usize, usize)
     where
         P: FnMut(&char) -> bool,
     {
-        let start = self.reset_peek();
-        for ch in self.input.iter().skip(start) {
+        let byte_start = self.position();
+        let char_start = self.reset_peek();
+        for (_, ch) in self.input.iter().skip(char_start) {
             if pred(ch) {
                 break;
             } else {
                 self.peek.set(self.peek.get() + 1);
             }
         }
-        let end = self.peek.get();
-        (start, end)
+
+        let byte_end = self.position_of_char(self.peek.get());
+        (byte_start, byte_end)
     }
 
     /// Peeks tokens until needle is found returns start and end.
@@ -322,12 +352,16 @@ impl<'a> Muncher<'a> {
     /// assert_eq!(munch.eat(), Some('a'));
     /// ```
     pub fn peek_range_of(&self, needle: &str) -> (usize, usize) {
-        let start = self.reset_peek();
-        let split = self.text[start..].split(needle).collect::<Vec<_>>();
-        let end = start + split[0].chars().count();
-        (start, end)
+        let byte_start = self.position();
+        let char_start = self.reset_peek();
+        let split = self.text[char_start..].split(needle).collect::<Vec<_>>();
+        let char_end = char_start + split[0].chars().count();
+        let byte_end = self.position_of_char(char_end);
+        (byte_start, byte_end)
     }
 
+    /// Seek the `peek` cursor the given number of chars.
+    ///
     /// Returns `Some(&str)` if `seek` does not run into the end
     /// of the input.
     ///
@@ -340,13 +374,15 @@ impl<'a> Muncher<'a> {
     /// assert_eq!(m.seek(5), Some("hello".to_string()));
     /// ```
     pub fn seek(&self, count: usize) -> Option<String> {
-        let start = self.peek.get();
-        let end = start + count;
-        if end > self.input.len() {
+        let char_start = self.peek.get();
+        let byte_start = self.position_of_char(char_start);
+        let char_end = char_start + count;
+        if char_end > self.input.len() {
             return None;
         }
-        self.peek.set(end);
-        Some(self.input[start..end].iter().collect::<String>())
+        self.peek.set(char_end);
+        let byte_end = self.position_of_char(char_end);
+        Some(self.text()[byte_start..byte_end].to_string())
     }
 
     /// Eats the next char if not at end of input
@@ -361,12 +397,13 @@ impl<'a> Muncher<'a> {
     /// assert_eq!(m.eat(), Some('b'));
     /// assert_eq!(m.eat(), Some('c'));
     /// assert_eq!(m.eat(), None);
+    /// assert_eq!(m.eat(), None);
     /// ```
     pub fn eat(&mut self) -> Option<char> {
         let res = self.input.get(self.next).copied();
         self.next += 1;
         self.peek.set(self.next);
-        res
+        res.map(|(_, c)| c)
     }
 
     /// Eats next white space if next char is space and returns true.
@@ -577,18 +614,25 @@ impl<'a> Muncher<'a> {
     where
         P: FnMut(&char) -> bool,
     {
-        let start = self.next;
-        for ch in self.input.iter().skip(start) {
+        let char_start = self.next;
+        for (_, ch) in self.input.iter().skip(char_start) {
             if pred(ch) {
                 break;
             } else {
                 self.next += 1;
             }
         }
-        let diff = self.next - start;
+        let diff = self.next - char_start;
         self.peek.set(self.next);
 
-        self.input.iter().skip(start).take(diff).copied().collect::<Vec<_>>().into_iter()
+        self.input
+            .iter()
+            .skip(char_start)
+            .take(diff)
+            .copied()
+            .map(|(_, c)| c)
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 
     /// Eats tokens until given predicate is true returns start and end.
@@ -608,8 +652,8 @@ impl<'a> Muncher<'a> {
     where
         P: FnMut(&char) -> bool,
     {
-        let start = self.next;
-        for ch in self.input.iter().skip(start) {
+        let byte_start = self.position();
+        for (_, ch) in self.input.iter().skip(self.char_position()) {
             if pred(ch) {
                 break;
             } else {
@@ -618,7 +662,7 @@ impl<'a> Muncher<'a> {
         }
         self.peek.set(self.next);
 
-        (start, self.next)
+        (byte_start, self.position())
     }
 
     /// Eat tokens until needle is found returns start and end.
@@ -639,12 +683,12 @@ impl<'a> Muncher<'a> {
         assert!(self.next < self.input.len());
 
         self.reset_peek();
-        let start = self.next;
-        let split = self.text[start..].split(needle).collect::<Vec<_>>();
+        let byte_start = self.position();
+        let split = self.text[byte_start..].split(needle).collect::<Vec<_>>();
 
-        let end = start + split[0].chars().count();
-        self.next = end;
-        (start, end)
+        let char_end = byte_start + split[0].chars().count();
+        self.next = char_end;
+        (byte_start, self.position_of_char(char_end))
     }
 }
 
@@ -729,6 +773,24 @@ mod tests {
     }
 
     #[test]
+    fn peek_count_codepoints() {
+        let input = "pánico en la discoteca\npánico en la discoteca";
+        let mut munch = Muncher::new(input);
+
+        let (start, end) = munch.peek_until_count(|ch| ch == &'d');
+        assert_eq!(&munch.text()[start..end], "pánico en la ");
+
+        let (start, end) = munch.eat_until_count(|ch| ch == &'d');
+        assert_eq!(&munch.text()[start..end], "pánico en la ");
+
+        assert_eq!(munch.eat(), Some('d'));
+        assert_eq!(munch.peek(), Some(&'i'));
+
+        let (start, end) = munch.peek_until_count(|ch| ch == &'d');
+        assert_eq!(&munch.text()[start..end], "iscoteca\npánico en la ");
+    }
+
+    #[test]
     fn peek_range_of() {
         let input = "abcde";
         let munch = Muncher::new(input);
@@ -743,9 +805,32 @@ mod tests {
         let m = Muncher::new(input);
 
         assert_eq!(m.seek(5), Some("hello".into()));
+        assert_eq!(m.peek.get(), 5);
+
         assert_eq!(m.peek(), Some(&' '));
+        assert_eq!(m.peek.get(), 6);
+
+        assert_eq!(m.input.get(6), Some(&(6, 'w')));
+        assert_eq!(m.input.get(10), Some(&(10, 'd')));
+
         println!("{:#?}", m);
         assert_eq!(m.seek(5), Some("world".into()));
+        assert!(m.peek().is_none());
+    }
+
+    #[test]
+    fn seek_muncher_codepoints() {
+        let input = "pánico en la";
+        let m = Muncher::new(input);
+
+        assert_eq!(m.seek(6), Some("pánico".into()));
+        assert_eq!(m.peek.get(), 6);
+
+        assert_eq!(m.peek(), Some(&' '));
+        assert_eq!(m.peek.get(), 7);
+
+        println!("{:#?}", m);
+        assert_eq!(m.seek(5), Some("en la".into()));
         assert!(m.peek().is_none());
     }
 
