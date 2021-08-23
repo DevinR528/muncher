@@ -264,7 +264,7 @@ impl<'a> Muncher<'a> {
     where
         P: FnMut(&char) -> bool,
     {
-        let start = self.peek.get();
+        let start = self.reset_peek();
         for ch in self.input.iter().skip(start) {
             if pred(ch) {
                 break;
