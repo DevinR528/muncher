@@ -1,6 +1,6 @@
 [package]
 name = "muncher"
-version = "0.6.2"
+version = "0.7.0"
 authors = ["Devin R <devin.ragotzy@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "Easy to use char muncher for writing a parser."
