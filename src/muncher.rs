@@ -211,14 +211,10 @@ impl<'a> Muncher<'a> {
     }
 
     /// The current byte index of `Muncher`, not its peek position.
-    pub fn position(&self) -> usize {
-        self.position_of_char(self.next)
-    }
+    pub fn position(&self) -> usize { self.position_of_char(self.next) }
 
     /// The current char index of `Muncher`, not its peek position.
-    pub fn char_position(&self) -> usize {
-        self.next
-    }
+    pub fn char_position(&self) -> usize { self.next }
 
     /// Returns true when next counter has exhausted input.
     pub fn is_done(&self) -> bool { self.next >= self.input.len() }
