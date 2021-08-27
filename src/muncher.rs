@@ -50,11 +50,15 @@ impl<'s> Stack<'s> {
     /// ```
     pub fn eat(&mut self, input: char) -> StackResult {
         match input {
-            '{' | '[' | '(' => self.push(input),
+            '{' | '[' | '(' => {
+                self.push(input);
+                StackResult::Okay
+            }
             '}' | ']' | ')' => self.pop(input),
             _ => StackResult::NonBrace,
         }
     }
+
     /// Internal matcher to verify close brace being popped is a match
     /// for the open brace being removed.
     fn brace_match(&mut self, input: char) -> bool {
@@ -67,10 +71,8 @@ impl<'s> Stack<'s> {
     }
 
     /// add brace to stack
-    fn push(&mut self, ch: char) -> StackResult {
-        self.stack.push(ch);
-        StackResult::Okay
-    }
+    fn push(&mut self, ch: char) { self.stack.push(ch); }
+
     /// When input is a close brace pop calls `brace_match` and if match
     /// removes the last open brace.
     fn pop(&mut self, input: char) -> StackResult {
@@ -81,6 +83,7 @@ impl<'s> Stack<'s> {
             StackResult::BraceUnmatched
         }
     }
+
     /// Returns true when all braces have been matched with a closing
     /// brace.
     ///
@@ -150,7 +153,7 @@ impl<'a> Muncher<'a> {
     /// ```
     /// use muncher::Muncher;
     ///
-    /// let input = "parsable input";
+    /// let input = "lexable input";
     /// let munch = Muncher::new(input);
     /// ```
     pub fn new(input: &'a str) -> Self {
@@ -367,9 +370,9 @@ impl<'a> Muncher<'a> {
     ///
     /// let input = "hello world";
     /// let m = Muncher::new(input);
-    /// assert_eq!(m.seek(5), Some("hello".to_string()));
+    /// assert_eq!(m.seek(5), Some("hello"));
     /// ```
-    pub fn seek(&self, count: usize) -> Option<String> {
+    pub fn seek(&self, count: usize) -> Option<&str> {
         let char_start = self.peek.get();
         let byte_start = self.position_of_char(char_start);
         let char_end = char_start + count;
@@ -378,7 +381,7 @@ impl<'a> Muncher<'a> {
         }
         self.peek.set(char_end);
         let byte_end = self.position_of_char(char_end);
-        Some(self.text()[byte_start..byte_end].to_string())
+        Some(&self.text()[byte_start..byte_end])
     }
 
     /// Eats the next char if not at end of input
@@ -606,7 +609,7 @@ impl<'a> Muncher<'a> {
     /// assert_eq!(text, "abc");
     /// assert_eq!(munch.eat(), Some('d'));
     /// ```
-    pub fn eat_until<P>(&mut self, mut pred: P) -> impl Iterator<Item = char>
+    pub fn eat_until<P>(&mut self, mut pred: P) -> impl Iterator<Item = char> + '_
     where
         P: FnMut(&char) -> bool,
     {
@@ -621,14 +624,8 @@ impl<'a> Muncher<'a> {
         let diff = self.next - char_start;
         self.peek.set(self.next);
 
-        self.input
-            .iter()
-            .skip(char_start)
-            .take(diff)
-            .copied()
-            .map(|(_, c)| c)
-            .collect::<Vec<_>>()
-            .into_iter()
+        let out = self.input.iter().skip(char_start).take(diff).map(|(_, c)| c);
+        out.copied()
     }
 
     /// Eats tokens until given predicate is true returns start and end.
@@ -707,6 +704,24 @@ mod tests {
 
         let (c, l) = munch.cursor_position();
         assert_eq!(c, 1);
+        assert_eq!(l, 3);
+    }
+
+    #[test]
+    fn test_position_codepoints() {
+        let input = "ábc\ndeá\ng🍌hi";
+        let mut munch = Muncher::new(input);
+
+        let _ = munch.eat_until(|ch| ch == &'c').collect::<String>();
+        munch.eat();
+
+        let (c, l) = munch.cursor_position();
+        assert_eq!(c, 4);
+        assert_eq!(l, 1);
+        let _ = munch.eat_until(|ch| ch == &'i').collect::<String>();
+
+        let (c, l) = munch.cursor_position();
+        assert_eq!(c, 4);
         assert_eq!(l, 3);
     }
 
@@ -800,7 +815,7 @@ mod tests {
         let input = "hello world";
         let m = Muncher::new(input);
 
-        assert_eq!(m.seek(5), Some("hello".into()));
+        assert_eq!(m.seek(5), Some("hello"));
         assert_eq!(m.peek.get(), 5);
 
         assert_eq!(m.peek(), Some(&' '));
@@ -810,7 +825,7 @@ mod tests {
         assert_eq!(m.input.get(10), Some(&(10, 'd')));
 
         println!("{:#?}", m);
-        assert_eq!(m.seek(5), Some("world".into()));
+        assert_eq!(m.seek(5), Some("world"));
         assert!(m.peek().is_none());
     }
 
@@ -819,14 +834,14 @@ mod tests {
         let input = "pánico en la";
         let m = Muncher::new(input);
 
-        assert_eq!(m.seek(6), Some("pánico".into()));
+        assert_eq!(m.seek(6), Some("pánico"));
         assert_eq!(m.peek.get(), 6);
 
         assert_eq!(m.peek(), Some(&' '));
         assert_eq!(m.peek.get(), 7);
 
         println!("{:#?}", m);
-        assert_eq!(m.seek(5), Some("en la".into()));
+        assert_eq!(m.seek(5), Some("en la"));
         assert!(m.peek().is_none());
     }
 
@@ -855,6 +870,18 @@ mod tests {
     }
 
     #[test]
+    fn test_fork_codepoints() {
+        let input = "ábcde";
+        let mut munch = Muncher::new(input);
+        assert_eq!(munch.eat(), Some('á'));
+
+        let fork = munch.fork();
+        assert_eq!(fork.peek(), Some(&'b'));
+        assert_eq!(munch.eat(), Some('b'));
+        assert_eq!(munch.eat(), Some('c'));
+    }
+
+    #[test]
     fn test_stack_math() {
         let input = "((5 + (3 * 10)) / 1)\n";
         let munch = Muncher::new(input);
@@ -865,6 +892,7 @@ mod tests {
         }
         assert!(stack.is_matched())
     }
+
     #[test]
     fn test_stack_code() {
         let input = "fn a() { fn b() { x = [ (), () ] } }\n";
@@ -899,7 +927,7 @@ mod tests {
             } else {
                 munch.eat();
                 let _ = munch.eat_until(|c| *c == '\u{1b}');
-                let _ = munch.seek(3) == Some("[0m".to_string());
+                let _ = munch.seek(3) == Some("[0m");
             }
         }
     }
