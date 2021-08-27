@@ -405,16 +405,20 @@ impl<'a> Muncher<'a> {
         res.map(|(_, c)| c)
     }
 
-    /// Eats next white space if next char is space and returns true.
-    pub fn eat_ws(&mut self) -> bool {
+    #[inline]
+    fn eat_char(&mut self, x: char) -> bool {
         self.reset_peek();
-        if self.peek() == Some(&' ') {
+        if self.peek() == Some(&x) {
             self.eat().is_some()
         } else {
             self.reset_peek();
             false
         }
     }
+
+    /// Eats next white space if next char is space and returns true.
+    pub fn eat_ws(&mut self) -> bool { self.eat_char(' ') }
+
     /// Eats next newline if next char is newline and returns true.
     /// This handles both windows and unix line endings.
     pub fn eat_eol(&mut self) -> bool {
@@ -432,169 +436,52 @@ impl<'a> Muncher<'a> {
     }
 
     /// Eats `=` and returns true, false if not found.
-    pub fn eat_eq(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&'=') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_eq(&mut self) -> bool { self.eat_char('=') }
 
     /// Eats `[` and returns true, false if not found.
-    pub fn eat_open_brc(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&'[') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_open_brc(&mut self) -> bool { self.eat_char('[') }
 
     /// Eats `]` and returns true, false if not found.
-    pub fn eat_close_brc(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&']') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_close_brc(&mut self) -> bool { self.eat_char(']') }
 
     /// Eats `{` and returns true, false if not found.
-    pub fn eat_open_curly(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&'{') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_open_curly(&mut self) -> bool { self.eat_char('{') }
 
     /// Eats `}` and returns true, false if not found.
-    pub fn eat_close_curly(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&'}') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_close_curly(&mut self) -> bool { self.eat_char('}') }
 
     /// Eats `(` and returns true, false if not found.
-    pub fn eat_open_paren(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&'(') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_open_paren(&mut self) -> bool { self.eat_char('(') }
 
     /// Eats `)` and returns true, false if not found.
-    pub fn eat_close_paren(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&')') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_close_paren(&mut self) -> bool { self.eat_char(')') }
 
     /// Eats `"` and returns true, false if not found.
-    pub fn eat_double_quote(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&'"') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_double_quote(&mut self) -> bool { self.eat_char('"') }
 
     /// Eats `'` and returns true, false if not found.
-    pub fn eat_single_quote(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&'\'') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_single_quote(&mut self) -> bool { self.eat_char('\'') }
 
     /// Eats `,` and returns true, false if not found.
-    pub fn eat_comma(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&',') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_comma(&mut self) -> bool { self.eat_char(',') }
 
     /// Eats `#` and returns true, false if not found.
-    pub fn eat_hash(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&'#') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_hash(&mut self) -> bool { self.eat_char('#') }
 
     /// Eats `+` and returns true, false if not found.
-    pub fn eat_plus(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&'+') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_plus(&mut self) -> bool { self.eat_char('+') }
 
     /// Eats `-` and returns true, false if not found.
-    pub fn eat_minus(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&'-') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_minus(&mut self) -> bool { self.eat_char('-') }
 
     /// Eats `:` and returns true, false if not found.
-    pub fn eat_colon(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&':') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_colon(&mut self) -> bool { self.eat_char(':') }
+
+    /// Eats `;` and returns true, false if not found.
+    pub fn eat_semi_colon(&mut self) -> bool { self.eat_char(';') }
 
     /// Eats `.` and returns true, false if not found.
-    pub fn eat_dot(&mut self) -> bool {
-        self.reset_peek();
-        if self.peek() == Some(&'.') {
-            self.eat().is_some()
-        } else {
-            self.reset_peek();
-            false
-        }
-    }
+    pub fn eat_dot(&mut self) -> bool { self.eat_char('.') }
 
     /// Eat tokens until given predicate is true.
     ///
@@ -689,7 +576,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_position() {
+    fn position() {
         let input = "abc\ndef\nghi";
         let mut munch = Muncher::new(input);
 
@@ -707,7 +594,7 @@ mod tests {
     }
 
     #[test]
-    fn test_position_codepoints() {
+    fn position_codepoints() {
         let input = "ábc\ndeá\ng🍌hi";
         let mut munch = Muncher::new(input);
 
@@ -845,7 +732,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eat_eol() {
+    fn eat_eol() {
         let input = "hello\nworld";
         let mut m = Muncher::new(input);
 
@@ -854,10 +741,18 @@ mod tests {
         let _hello = m.eat_until(|c| c == &'\n').collect::<String>();
         assert_eq!(m.peek(), Some(&'\n'));
         assert!(m.eat_eol());
+
+        let input = "hello\r\nworld";
+        let mut m = Muncher::new(input);
+
+        let _hello = m.eat_until(|c| c == &'\r').collect::<String>();
+        assert_eq!(m.peek(), Some(&'\r'));
+        assert!(m.eat_eol());
+        assert_eq!(m.peek(), Some(&'w'));
     }
 
     #[test]
-    fn test_fork() {
+    fn fork() {
         let input = "abcde";
         let mut munch = Muncher::new(input);
         assert_eq!(munch.eat(), Some('a'));
@@ -869,7 +764,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fork_codepoints() {
+    fn fork_codepoints() {
         let input = "ábcde";
         let mut munch = Muncher::new(input);
         assert_eq!(munch.eat(), Some('á'));
@@ -881,7 +776,7 @@ mod tests {
     }
 
     #[test]
-    fn test_stack_math() {
+    fn stack_math() {
         let input = "((5 + (3 * 10)) / 1)\n";
         let munch = Muncher::new(input);
         let mut stack = munch.brace_stack();
@@ -893,7 +788,7 @@ mod tests {
     }
 
     #[test]
-    fn test_stack_code() {
+    fn stack_code() {
         let input = "fn a() { fn b() { x = [ (), () ] } }\n";
         let munch = Muncher::new(input);
         let mut stack = munch.brace_stack();
@@ -903,8 +798,9 @@ mod tests {
         }
         assert!(stack.is_matched())
     }
+
     #[test]
-    fn test_stack_fail() {
+    fn stack_fail() {
         let input = "(]\n";
         let munch = Muncher::new(input);
         let mut stack = munch.brace_stack();
@@ -929,5 +825,17 @@ mod tests {
                 let _ = munch.seek(3) == Some("[0m");
             }
         }
+    }
+
+    #[test]
+    fn test_stack_code() {
+        let input = " ](.;,";
+        let mut m = Muncher::new(input);
+        assert!(m.eat_ws());
+        assert!(m.eat_close_brc());
+        assert!(m.eat_open_paren());
+        assert!(m.eat_dot());
+        assert!(m.eat_semi_colon());
+        assert!(m.eat_comma());
     }
 }
