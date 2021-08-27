@@ -253,20 +253,20 @@ impl<'a> Muncher<'a> {
         (col, ln)
     }
 
-    /// Resets `Muncher.peek` to current `Muncher.next`
+    /// Resets `peek` to current `next`.
     pub fn reset_peek(&self) -> usize {
         self.peek.set(self.next);
         self.peek.get()
     }
 
-    /// increments `Muncher.peek` by one
+    /// Increments `peek` by one.
     fn adv_peek(&self) -> usize {
         let inc = self.peek.get();
         self.peek.set(inc + 1);
         inc
     }
 
-    /// Gets the char at `Muncher.peek` index then increments `Muncher.peek` by one
+    /// Gets the char at `peek` index then increments `peek` by one.
     pub fn peek(&self) -> Option<&char> {
         let res = self.input.get(self.peek.get());
         self.adv_peek();
@@ -384,7 +384,7 @@ impl<'a> Muncher<'a> {
         Some(&self.text()[byte_start..byte_end])
     }
 
-    /// Eats the next char if not at end of input
+    /// Eats the next char if not at end of input.
     ///
     /// # Example
     /// ```
@@ -431,7 +431,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `=` and returns true, false if not found
+    /// Eats `=` and returns true, false if not found.
     pub fn eat_eq(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&'=') {
@@ -442,7 +442,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `[` and returns true, false if not found
+    /// Eats `[` and returns true, false if not found.
     pub fn eat_open_brc(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&'[') {
@@ -453,7 +453,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `]` and returns true, false if not found
+    /// Eats `]` and returns true, false if not found.
     pub fn eat_close_brc(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&']') {
@@ -464,7 +464,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `{` and returns true, false if not found
+    /// Eats `{` and returns true, false if not found.
     pub fn eat_open_curly(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&'{') {
@@ -475,7 +475,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `}` and returns true, false if not found
+    /// Eats `}` and returns true, false if not found.
     pub fn eat_close_curly(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&'}') {
@@ -486,7 +486,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `(` and returns true, false if not found
+    /// Eats `(` and returns true, false if not found.
     pub fn eat_open_paren(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&'(') {
@@ -497,7 +497,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `)` and returns true, false if not found
+    /// Eats `)` and returns true, false if not found.
     pub fn eat_close_paren(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&')') {
@@ -508,7 +508,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `"` and returns true, false if not found
+    /// Eats `"` and returns true, false if not found.
     pub fn eat_double_quote(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&'"') {
@@ -519,7 +519,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `'` and returns true, false if not found
+    /// Eats `'` and returns true, false if not found.
     pub fn eat_single_quote(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&'\'') {
@@ -530,7 +530,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `,` and returns true, false if not found
+    /// Eats `,` and returns true, false if not found.
     pub fn eat_comma(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&',') {
@@ -541,7 +541,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `#` and returns true, false if not found
+    /// Eats `#` and returns true, false if not found.
     pub fn eat_hash(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&'#') {
@@ -552,7 +552,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `+` and returns true, false if not found
+    /// Eats `+` and returns true, false if not found.
     pub fn eat_plus(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&'+') {
@@ -563,7 +563,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `-` and returns true, false if not found
+    /// Eats `-` and returns true, false if not found.
     pub fn eat_minus(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&'-') {
@@ -574,7 +574,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `:` and returns true, false if not found
+    /// Eats `:` and returns true, false if not found.
     pub fn eat_colon(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&':') {
@@ -585,7 +585,7 @@ impl<'a> Muncher<'a> {
         }
     }
 
-    /// Eats `.` and returns true, false if not found
+    /// Eats `.` and returns true, false if not found.
     pub fn eat_dot(&mut self) -> bool {
         self.reset_peek();
         if self.peek() == Some(&'.') {
@@ -624,8 +624,7 @@ impl<'a> Muncher<'a> {
         let diff = self.next - char_start;
         self.peek.set(self.next);
 
-        let out = self.input.iter().skip(char_start).take(diff).map(|(_, c)| c);
-        out.copied()
+        self.input.iter().skip(char_start).take(diff).map(|(_, c)| c).copied()
     }
 
     /// Eats tokens until given predicate is true returns start and end.
